@@ -2,20 +2,24 @@ from rest_framework import viewsets, generics
 from rest_framework.permissions import IsAuthenticated
 
 from materials.models import Course, Lesson
-from materials.serializers import CourseSerializer, LessonSerializer, CourseDetailSerializer
+from materials.paginators import MaterialsPaginator
+from materials.serializers import CourseSerializer, LessonSerializer, CourseDetailSerializer, LessonDetailSerializer
 from users.permissions import IsModerator, IsOwner
 
 
 class CourseViewSet(viewsets.ModelViewSet):
     default_serializer = CourseSerializer
     queryset = Course.objects.all()
+    pagination_class = MaterialsPaginator
     serializers_choice = {
         'retrieve': CourseDetailSerializer,
     }
 
     def get_serializer_class(self):
-        """определяем сериализатор с учетом запрашиваемого действия(self.action = list, retrieve, create, update,
-        delete). Если действие не указано в словарике serializers_choice - используется default_serializer"""
+        """определяем сериализатор с учетом запрашиваемого действия
+           (self.action = list, retrieve, create, update,delete).
+           Если действие не указано в словарике serializers_choice -
+           используется default_serializer"""
         return self.serializers_choice.get(self.action, self.default_serializer)
 
     def get_permissions(self):
@@ -50,10 +54,11 @@ class LessonListView(generics.ListAPIView):
     serializer_class = LessonSerializer
     queryset = Lesson.objects.all()
     permission_classes = [IsModerator | IsOwner]
+    pagination_class = MaterialsPaginator
 
 
 class LessonRetrieveView(generics.RetrieveAPIView):
-    serializer_class = LessonSerializer
+    serializer_class = LessonDetailSerializer
     queryset = Lesson.objects.all()
     permission_classes = [IsModerator | IsOwner]
 
