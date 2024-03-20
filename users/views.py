@@ -7,7 +7,7 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from config import settings
+from django.conf import settings
 from materials.models import Course
 from services import get_session
 from users.models import User, Payment, Subscription

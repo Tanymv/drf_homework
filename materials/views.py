@@ -1,19 +1,17 @@
 from rest_framework import viewsets, generics
-from rest_framework.permissions import IsAuthenticated
 
 from materials.models import Course, Lesson
 from materials.paginators import MaterialsPaginator
 from materials.serializers import CourseSerializer, LessonSerializer, CourseDetailSerializer, LessonDetailSerializer
 from users.permissions import IsModerator, IsOwner
+from materials.tasks import send_update_info_task
 
 
 class CourseViewSet(viewsets.ModelViewSet):
     default_serializer = CourseSerializer
     queryset = Course.objects.all()
     pagination_class = MaterialsPaginator
-    serializers_choice = {
-        'retrieve': CourseDetailSerializer,
-    }
+    serializers_choice = {'retrieve': CourseDetailSerializer}
 
     def get_serializer_class(self):
         """определяем сериализатор с учетом запрашиваемого действия
@@ -37,6 +35,14 @@ class CourseViewSet(viewsets.ModelViewSet):
         new_course = serializer.save()
         new_course.owner = self.request.user
         new_course.save()
+
+    def perform_update(self, serializer):
+        """Отправляем уведомление всем подписанным пользователям"""
+        updated_course = serializer.save()
+        subject = f'Обновление курса {updated_course.name}'
+        message = 'По Вашей подписке есть обновление'
+        send_update_info_task.delay(updated_course.id, subject, message)
+        updated_course.save()
 
 
 class LessonCreateView(generics.CreateAPIView):
