@@ -6,8 +6,13 @@ services:
     image: postgres:latest
     volumes:
       - pg_data:/var/lib/postgresql/data
-    env_file:
-      - .env
+#    env_file:
+#      - .env
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=12345
+      - POSTGRES_DB=postgres
+      - PGDATA=/var/lib/postgresql/data/pgdata
     ports:
       - "5432:5432"
     healthcheck:
@@ -35,23 +40,23 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-      migration:
-        condition: service_completed_successfully
+#      migration:
+#        condition: service_completed_successfully
     tty: true
-    command: python manage.py runserver 0.0.0.0:8000
+    command: bash -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
     ports:
       - "8000:8000"
     volumes:
       - .:/lms_app
 
 
-  migration:
-    build: .
-    command: python manage.py makemigrations && python manage.py migrate
-    depends_on:
-      - db
-    volumes:
-      - .:/lms_app
+#  migration:
+#    build: .
+#    command: python manage.py makemigrations && python manage.py migrate
+#    depends_on:
+#      - db
+#    volumes:
+#      - .:/lms_app
 
 
   celery:
@@ -73,7 +78,7 @@ services:
       db:
         condition: service_healthy
     tty: true
-    command: python manage.py migrate && celery -A config beat -l INFO
+    command: celery -A config beat -l INFO
     volumes:
       - .:/lms_app
 
